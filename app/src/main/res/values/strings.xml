@@ -3,4 +3,7 @@
     <string name="welcome">Welcome to the app</string>
     <string name="signup">SignUp</string>
     <string name="login">Login</string>
+    <string name="email">example@gmail.com</string>
+    <string name="password">*********</string>
+    <string name="dontRemember">Don\'t remember password? Recover it</string>
 </resources>

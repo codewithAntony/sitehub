@@ -1,6 +1,5 @@
 package com.kimongo.sitehub.ui.screens
 
-import android.window.SplashScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
