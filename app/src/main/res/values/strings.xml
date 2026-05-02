@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">sitehub</string>
-    <string name="welcome">Welcome to the app</string>
+    <string name="welcome">Welcome to SiteHub</string>
+    <string name="message">Your construction site command centre.</string>
     <string name="signup">Signup</string>
     <string name="login">Login</string>
     <string name="email">example@gmail.com</string>
