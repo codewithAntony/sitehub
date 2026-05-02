@@ -21,10 +21,10 @@ fun AppNavigation() {
             SplashScreen(navController)
         }
         composable("login") {
-            LoginScreen()
+            LoginScreen(navController)
         }
         composable("signup") {
-            Signupcreen()
+            Signupcreen(navController)
         }
     }
 }

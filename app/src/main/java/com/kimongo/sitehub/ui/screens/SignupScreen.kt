@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -37,11 +40,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.kimongo.sitehub.R
 
 @Preview
 @Composable
-fun Signupcreen() {
+fun SignupPreview() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Signupcreen(navController = NavController(context))
+}
+@Composable
+fun Signupcreen(navController: NavController) {
     val altoysFont = FontFamily(Font(R.font.altoysitalic))
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -62,6 +71,20 @@ fun Signupcreen() {
                 contentDescription = null,
                 modifier = Modifier.align(Alignment.TopEnd)
             )
+
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 35.dp, start = 16.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_back),
+                    contentDescription = "Back",
+                    tint = Color.Black,
+                    modifier = Modifier.size(38.dp)
+                )
+            }
 
             Text(
                 text = stringResource(R.string.signup),
