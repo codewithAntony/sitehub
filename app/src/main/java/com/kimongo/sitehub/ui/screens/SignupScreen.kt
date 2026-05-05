@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -25,10 +26,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -37,25 +40,32 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kimongo.sitehub.R
+import com.kimongo.sitehub.auth.AuthManager
+import com.kimongo.sitehub.auth.AuthResponse
+import kotlinx.coroutines.launch
 
-@Preview
-@Composable
-fun SignupPreview() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    Signupcreen(navController = NavController(context))
-}
+
 @Composable
 fun Signupcreen(navController: NavController) {
+
+    val context = LocalContext.current
+    val authManager = remember { AuthManager(context) }
+    val scope = rememberCoroutineScope()
+
     val altoysFont = FontFamily(Font(R.font.altoysitalic))
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var repassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
 
     Column(
         modifier = Modifier
@@ -205,8 +215,8 @@ fun Signupcreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = repassword,
-                onValueChange = { repassword = it },
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
                 placeholder = {
                     Text(
                         stringResource(R.string.password),
@@ -227,8 +237,53 @@ fun Signupcreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            errorMessage?.let {
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
             Button(
-                onClick = {},
+                onClick = {
+                    scope.launch {
+                        errorMessage = null
+
+                        if (email.isBlank() || password.isBlank()) {
+                            errorMessage = "Email and password required"
+                        } else if (password != confirmPassword) {
+                            errorMessage = "Password do not match"
+                        } else {
+
+                            isLoading = true
+                            errorMessage = null
+
+                            scope.launch {
+                                authManager.signUpWithEmail(email, password)
+                                    .collect { response ->
+                                        isLoading = false
+
+                                        when (response) {
+                                            is AuthResponse.Success -> {
+                                                navController.navigate("login") {
+                                                    popUpTo("signup") { inclusive = true }
+                                                }
+
+                                            }
+                                            is AuthResponse.Error -> {
+                                                errorMessage = response.message ?: "Signup failed"
+                                            }
+                                            else -> {
+                                                isLoading = false
+                                            }
+                                        }
+                                    }
+                            }
+                        }
+
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -237,12 +292,14 @@ fun Signupcreen(navController: NavController) {
                 ),
                 shape = RoundedCornerShape(25.dp)
             ) {
-                Text(
-                    text = stringResource(id = R.string.signup),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text("Sign Up", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
 
 

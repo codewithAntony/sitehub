@@ -5,6 +5,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.kimongo.sitehub.ui.screens.HomeScreen
 import com.kimongo.sitehub.ui.screens.LoginScreen
 import com.kimongo.sitehub.ui.screens.Signupcreen
 import com.kimongo.sitehub.ui.screens.SplashScreen
@@ -25,6 +26,9 @@ fun AppNavigation() {
         }
         composable("signup") {
             Signupcreen(navController)
+        }
+        composable("homescreen") {
+            HomeScreen(navController)
         }
     }
 }

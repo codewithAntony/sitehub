@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,10 +30,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,24 +45,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kimongo.sitehub.R
+import com.kimongo.sitehub.auth.AuthManager
+import com.kimongo.sitehub.auth.AuthResponse
+import kotlinx.coroutines.launch
 
-@Preview
-@Composable
-fun LoginPreview() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    Signupcreen(navController = NavController(context))
-}
 
 @Composable
 fun LoginScreen(navController: NavController) {
+
+    val context = LocalContext.current
+    val authManager = remember { AuthManager(context) }
+    val scope = rememberCoroutineScope()
+
     val altoysFont = FontFamily(Font(R.font.altoysitalic))
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -67,6 +75,7 @@ fun LoginScreen(navController: NavController) {
             .background(colorResource(R.color.white))
             .verticalScroll(rememberScrollState())
     ) {
+
         Box(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -84,7 +93,7 @@ fun LoginScreen(navController: NavController) {
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_back),
-                    contentDescription = "Back",
+                    contentDescription = null,
                     tint = Color.Black,
                     modifier = Modifier.size(38.dp)
                 )
@@ -109,21 +118,18 @@ fun LoginScreen(navController: NavController) {
 
             Text(
                 text = "Email",
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = email,
                 onValueChange = {email = it},
                 placeholder = {
-                    Text(
-                        stringResource(R.string.email),
-                        color = Color.Gray
-                    )
+                    Text("Enter email")
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -150,10 +156,7 @@ fun LoginScreen(navController: NavController) {
                 value = password,
                 onValueChange = { password = it },
                 placeholder = {
-                    Text(
-                        stringResource(R.string.password),
-                        color = Color.Gray
-                    )
+                    Text("Enter password")
                 },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -169,8 +172,46 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            errorMessage?.let {
+                Text(
+                    text = it,
+                    color = Color.Red,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
             Button(
-                onClick = {},
+                onClick = {
+                    isLoading = true
+                    errorMessage = null
+
+                    scope.launch {
+                        authManager.signInWithEmail(email, password)
+                            .collect { response ->
+                                isLoading = false
+
+                                when (response) {
+                                    is AuthResponse.Success -> {
+                                        try {
+                                            navController.navigate("homescreen") {
+                                                popUpTo("login") { inclusive = true }
+                                            }
+                                        } catch (e: Exception) {
+                                            errorMessage = "Navigation Error: ${e.localizedMessage}"
+                                        }
+                                    }
+                                    is AuthResponse.Error -> {
+                                        isLoading = false
+                                        errorMessage = response.message
+                                    }
+                                    else -> {
+                                        isLoading = false
+                                    }
+                                }
+                            }
+                    }
+
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -179,13 +220,22 @@ fun LoginScreen(navController: NavController) {
                 ),
                 shape = RoundedCornerShape(25.dp)
             ) {
-                Text(
-                    text = stringResource(id = R.string.login),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(
+                        text ="Login",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = stringResource(R.string.dontRemember),
@@ -220,7 +270,27 @@ fun LoginScreen(navController: NavController) {
             }
 
             Button(
-                onClick = {},
+                onClick = {
+                    scope.launch {
+                        authManager.loginGoogleUser()
+                            .collect {
+                                response ->
+                                when (response) {
+                                    is AuthResponse.Success -> {
+                                        navController.navigate("homescreen") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                    is AuthResponse.Error -> {
+                                        errorMessage = response.message
+                                    }
+                                    else -> {
+                                        isLoading = false
+                                    }
+                                }
+                            }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorResource(R.color.grey)),
